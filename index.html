@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .main-container {
+            display: flex;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+        .video-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        /* Galería */
+        .gallery-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .gallery-view.active {
+            display: block;
+        }
+        .gallery-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .gallery-title {
+            font-size: 24px;
+            color: #333;
+            margin: 0;
+        }
+        .back-btn {
+            background: #666;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .back-btn:hover {
+            background: #555;
+        }
+        .gallery-folder {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .folder-info {
+            flex: 0 0 200px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .folder-date {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .folder-notes {
+            font-size: 13px;
+            color: #666;
+            white-space: pre-line;
+            font-family: monospace;
+            background: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        .folder-images {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .gallery-image {
+            flex: 1;
+            min-width: 0;
+            width: calc(33.333% - 7px); /* Ancho fijo para aprovechar el espacio */
+            height: auto; /* Altura automática para mantener aspecto */
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .gallery-image:hover {
+            transform: scale(1.02);
+        }
+        @media (max-width: 800px) {
+            .gallery-image {
+                width: calc(50% - 5px);
+            }
+        }
+        .no-gallery {
+            text-align: center;
+            color: #999;
+            font-size: 16px;
+            padding: 40px;
+        }
+        .placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 18px;
+            text-align: center;
+            padding: 40px;
+        }
+        .placeholder svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        .controls-section {
+            width: 350px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            background: #fafafa;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+        .upload-area.has-video {
+            display: none;
+        }
+        .upload-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .upload-btn, .gallery-btn {
+            flex: 1;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .upload-btn {
+            background: #4CAF50;
+        }
+        .upload-btn:hover {
+            background: #45a049;
+        }
+        .gallery-btn {
+            background: #2196F3;
+        }
+        .gallery-btn:hover {
+            background: #1976D2;
+        }
+        .select-dir-btn {
+            background: #FF9800;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .select-dir-btn:hover {
+            background: #F57C00;
+        }
+        .video-controls {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .video-controls.active {
+            display: flex;
+        }
+        .slider-container {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e0e0e0;
+            border-radius: 4px;
+            outline: none;
+            position: relative;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+        canvas {
+            max-height: 100%;
+            max-width: 100%;
+            height: auto;
+            width: auto;
+            border-radius: 8px;
+            display: block;
+        }
+        .info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            font-size: 13px;
+        }
+        .info.active {
+            display: block;
+        }
+        .info strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        .info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        video {
+            display: none;
+        }
+        .new-video-btn {
+            background: #f0f0f0;
+            color: #333;
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: none;
+        }
+        .new-video-btn:hover {
+            background: #e8e8e8;
+            border-color: #ccc;
+        }
+        .new-video-btn.active {
+            display: block;
+        }
+        
+        /* Controles de imagen */
+        .image-controls {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .image-controls.active {
+            display: block;
+        }
+        .image-controls h3 {
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #555;
+        }
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+        .control-row label {
+            flex: 0 0 80px;
+            font-size: 13px;
+            color: #666;
+        }
+        .control-row input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e0e0e0;
+            border-radius: 3px;
+            outline: none;
+        }
+        .control-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #2196F3;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .control-row span {
+            flex: 0 0 40px;
+            text-align: right;
+            font-size: 12px;
+            color: #888;
+        }
+        .reset-btn {
+            background: #f0f0f0;
+            color: #666;
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .reset-btn:hover {
+            background: #e8e8e8;
+        }
+        
+        /* Campo de notas */
+        .notes-input {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .notes-input.active {
+            display: block;
+        }
+        .notes-input label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        .notes-input textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            font-family: monospace;
+        }
+        .notes-input textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        /* Botones principales */
+        .main-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .quick-save-btn, .delete-btn {
+            flex: 1;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: none;
+        }
+        .quick-save-btn {
+            background: #4CAF50;
+        }
+        .delete-btn {
+            background: #f44336;
+        }
+        .quick-save-btn:hover {
+            background: #45a049;
+        }
+        .delete-btn:hover {
+            background: #d32f2f;
+        }
+        .quick-save-btn.active, .delete-btn.active {
+            display: block;
+        }
+        
+        /* Botón de exportación */
+        .export-btn {
+            background: #2196F3;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: none;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .export-btn:hover {
+            background: #1976D2;
+        }
+        .export-btn.active {
+            display: block;
+        }
+        .save-counter {
+            text-align: center;
+            color: #4CAF50;
+            font-size: 12px;
+            min-height: 20px;
+        }
+        
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.error {
+            background: #f44336;
+        }
+        
+        /* Área de recorte */
+        .crop-overlay {
+            position: absolute;
+            pointer-events: auto;
+            border: 2px solid #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+            display: none;
+            z-index: 10;
+            cursor: move;
+        }
+        .crop-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #4CAF50;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .crop-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+        .crop-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+        .crop-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+        .crop-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .action-buttons .crop-btn,
+        .action-buttons .export-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: none;
+            height: 48px;
+            box-sizing: border-box;
+        }
+        .action-buttons .crop-btn.active,
+        .action-buttons .export-btn.active {
+            display: block;
+        }
+        .crop-btn {
+            background: #FF9800;
+            color: white;
+        }
+        .crop-btn:hover {
+            background: #F57C00;
+        }
+        .crop-btn.active {
+            background: #4CAF50;
+        }
+        .crop-btn.active:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="video-section">
+            <div class="placeholder" id="placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                    <line x1="7" y1="2" x2="7" y2="22"></line>
+                    <line x1="17" y1="2" x2="17" y2="22"></line>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <line x1="2" y1="7" x2="7" y2="7"></line>
+                    <line x1="2" y1="17" x2="7" y2="17"></line>
+                    <line x1="17" y1="17" x2="22" y2="17"></line>
+                    <line x1="17" y1="7" x2="22" y2="7"></line>
+                </svg>
+                <p>Selecciona o arrastra un archivo de video</p>
+            </div>
+            <canvas id="canvas" style="display: none; position: relative;"></canvas>
+            <div class="crop-overlay" id="cropOverlay">
+                <div class="crop-handle nw" data-handle="nw"></div>
+                <div class="crop-handle ne" data-handle="ne"></div>
+                <div class="crop-handle sw" data-handle="sw"></div>
+                <div class="crop-handle se" data-handle="se"></div>
+            </div>
+            
+            <!-- Vista de galería -->
+            <div class="gallery-view" id="galleryView">
+                <div class="gallery-header">
+                    <h2 class="gallery-title">Galería</h2>
+                    <button class="back-btn" onclick="closeGallery()">Volver</button>
+                </div>
+                <div id="galleryContent">
+                    <!-- Contenido dinámico de la galería -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls-section">
+            
+            <div class="upload-area" id="uploadArea">
+                <p>Arrastra un archivo de video aquí</p>
+                <div class="upload-buttons">
+                    <button class="upload-btn" onclick="selectFile()">
+                        Seleccionar Video
+                    </button>
+                    <button class="gallery-btn" onclick="openGallery()">
+                        Galería
+                    </button>
+                </div>
+                <div class="gallery-buttons" style="margin-top: 15px;">
+                    <button class="select-dir-btn" onclick="selectGalleryDirectory()" style="width: 100%;">
+                        Seleccionar directorio de galería
+                    </button>
+                </div>
+            </div>
+
+            <div class="video-controls" id="videoControls">
+                <div class="slider-container">
+                    <input type="range" min="0" max="100" value="0" class="slider" id="timeSlider" step="0.01">
+                    <div class="time-display">
+                        <span id="currentTime">0:00</span>
+                        <span id="totalTime">0:00</span>
+                    </div>
+                </div>
+                
+                <div class="notes-input">
+                    <label for="notesInput">Notas:</label>
+                    <textarea id="notesInput" placeholder="peso: 81&#10;pullups: 10&#10;comentarios..."></textarea>
+                </div>
+                
+                <div class="main-buttons">
+                    <button class="quick-save-btn" id="quickSaveBtn" onclick="quickSave()">
+                        Guardado rápido
+                    </button>
+                    <button class="delete-btn" id="deleteBtn" onclick="deleteOriginalVideo()">
+                        Borrar video
+                    </button>
+                </div>
+                <div class="save-counter" id="saveCounter"></div>
+                
+                <button class="new-video-btn" id="newVideoBtn" onclick="loadNewVideo()">
+                    Cargar otro video
+                </button>
+                
+                <div class="action-buttons">
+                    <button class="crop-btn" id="toggleCropBtn" onclick="toggleCrop()">Activar recorte</button>
+                    <button class="export-btn" id="exportBtn" onclick="exportFrame()">
+                        Guardar
+                    </button>
+                </div>
+                
+                <div class="image-controls" id="imageControls">
+                    <h3>Ajustes de imagen</h3>
+                    <div class="control-row">
+                        <label>Brillo</label>
+                        <input type="range" min="50" max="150" value="100" id="brightnessSlider">
+                        <span id="brightnessValue">100%</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Contraste</label>
+                        <input type="range" min="50" max="150" value="100" id="contrastSlider">
+                        <span id="contrastValue">100%</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Saturación</label>
+                        <input type="range" min="0" max="200" value="100" id="saturationSlider">
+                        <span id="saturationValue">100%</span>
+                    </div>
+                    <button class="reset-btn" onclick="resetFilters()">Restablecer</button>
+                </div>
+            </div>
+
+            <div class="info" id="info">
+                <strong>Información del video:</strong>
+                <div id="videoInfo"></div>
+            </div>
+        </div>
+    </div>
+
+    <video id="video"></video>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const timeSlider = document.getElementById('timeSlider');
+        const currentTimeSpan = document.getElementById('currentTime');
+        const totalTimeSpan = document.getElementById('totalTime');
+        const videoControls = document.getElementById('videoControls');
+        const exportBtn = document.getElementById('exportBtn');
+        const info = document.getElementById('info');
+        const videoInfo = document.getElementById('videoInfo');
+        const newVideoBtn = document.getElementById('newVideoBtn');
+        const imageControls = document.getElementById('imageControls');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const saturationSlider = document.getElementById('saturationSlider');
+        const brightnessValue = document.getElementById('brightnessValue');
+        const contrastValue = document.getElementById('contrastValue');
+        const saturationValue = document.getElementById('saturationValue');
+        const placeholder = document.getElementById('placeholder');
+        const quickSaveBtn = document.getElementById('quickSaveBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const saveCounter = document.getElementById('saveCounter');
+        const cropOverlay = document.getElementById('cropOverlay');
+        const cropControls = document.getElementById('cropControls');
+        const toggleCropBtn = document.getElementById('toggleCropBtn');
+
+        let videoFile = null;
+        let brightness = 100;
+        let contrast = 100;
+        let saturation = 100;
+        let isVideoLoaded = false;
+        let frameCount = 0;
+        let cropEnabled = false;
+        let cropArea = { x: 0, y: 0, width: 0, height: 0 };
+        let savedCropSize = { width: 200, height: 150 }; // Tamaño recordado
+        let isDragging = false;
+        let dragHandle = null;
+
+        // Abrir diálogo de archivo con Electron
+        async function selectFile() {
+            if (window.electronAPI) {
+                const file = await window.electronAPI.openFileDialog();
+                if (file) {
+                    const blob = new Blob([file.buffer]);
+                    const fileObj = new File([blob], file.name, { type: 'video/' + file.name.split('.').pop() });
+                    handleFile(fileObj);
+                }
+            }
+        }
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // Drag and drop en toda la ventana cuando hay video
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('video/')) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('video/')) {
+                alert('Por favor selecciona un archivo de video');
+                return;
+            }
+
+            videoFile = file;
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            
+            video.addEventListener('loadedmetadata', () => {
+                isVideoLoaded = true;
+                
+                // Ocultar placeholder y mostrar canvas
+                placeholder.style.display = 'none';
+                canvas.style.display = 'block';
+                
+                // Ajustar canvas manteniendo aspecto
+                resizeCanvas();
+                
+                // Mostrar información del video
+                videoInfo.innerHTML = `
+                    <p>Archivo: ${file.name}</p>
+                    <p>Resolución: ${video.videoWidth} x ${video.videoHeight}</p>
+                    <p>Duración: ${formatTime(video.duration)}</p>
+                    <p>Tamaño: ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                `;
+                info.classList.add('active');
+                
+                // Configurar slider
+                timeSlider.max = video.duration;
+                totalTimeSpan.textContent = formatTime(video.duration);
+                
+                // Mostrar/ocultar elementos
+                uploadArea.classList.add('has-video');
+                videoControls.classList.add('active');
+                exportBtn.classList.add('active');
+                quickSaveBtn.classList.add('active');
+                deleteBtn.classList.add('active');
+                newVideoBtn.classList.add('active');
+                imageControls.classList.add('active');
+                toggleCropBtn.classList.add('active');
+                document.querySelector('.notes-input').classList.add('active');
+                
+                // Inicializar área de recorte con tamaño recordado
+                const centerX = (video.videoWidth - savedCropSize.width) / 2;
+                const centerY = (video.videoHeight - savedCropSize.height) / 2;
+                cropArea = { 
+                    x: Math.max(0, centerX), 
+                    y: Math.max(0, centerY), 
+                    width: Math.min(savedCropSize.width, video.videoWidth), 
+                    height: Math.min(savedCropSize.height, video.videoHeight) 
+                };
+                
+                // Mostrar primer frame inmediatamente
+                video.currentTime = 0.01; // Pequeño offset para forzar el seeked event
+                
+                // Asegurar que se dibuja el primer frame
+                video.addEventListener('canplaythrough', () => {
+                    drawFrame();
+                }, { once: true });
+            });
+        }
+
+        function resizeCanvas() {
+            if (!isVideoLoaded) return;
+            
+            const videoSection = document.querySelector('.video-section');
+            const videoAspect = video.videoWidth / video.videoHeight;
+            const maxHeight = videoSection.offsetHeight - 40;
+            const maxWidth = videoSection.offsetWidth - 40;
+            
+            let canvasHeight = maxHeight;
+            let canvasWidth = canvasHeight * videoAspect;
+            
+            if (canvasWidth > maxWidth) {
+                canvasWidth = maxWidth;
+                canvasHeight = canvasWidth / videoAspect;
+            }
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+            
+            // Redibujar el frame actual
+            if (isVideoLoaded) {
+                drawFrame();
+            }
+        }
+
+        // Escuchar cambios de tamaño de ventana
+        if (window.electronAPI) {
+            window.electronAPI.onWindowResized(() => {
+                resizeCanvas();
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+        
+        function loadNewVideo() {
+            // Reset UI
+            uploadArea.classList.remove('has-video');
+            videoControls.classList.remove('active');
+            exportBtn.classList.remove('active');
+            quickSaveBtn.classList.remove('active');
+            deleteBtn.classList.remove('active');
+            newVideoBtn.classList.remove('active');
+            info.classList.remove('active');
+            imageControls.classList.remove('active');
+            toggleCropBtn.classList.remove('active');
+            document.querySelector('.notes-input').classList.remove('active');
+            
+            // Mostrar placeholder y ocultar canvas
+            placeholder.style.display = 'flex';
+            canvas.style.display = 'none';
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Reset video
+            video.src = '';
+            videoFile = null;
+            isVideoLoaded = false;
+            frameCount = 0;
+            saveCounter.textContent = '';
+            
+            // Reset filters y crop
+            resetFilters();
+            cropEnabled = false;
+            cropOverlay.style.display = 'none';
+            toggleCropBtn.textContent = 'Activar recorte';
+            toggleCropBtn.classList.remove('active');
+        }
+
+        // Slider control
+        timeSlider.addEventListener('input', (e) => {
+            video.currentTime = e.target.value;
+            currentTimeSpan.textContent = formatTime(e.target.value);
+        });
+
+        // Dibujar frame cuando el video busca
+        video.addEventListener('seeked', () => {
+            drawFrame();
+        });
+
+        // Dibujar frame cuando el video está listo
+        video.addEventListener('loadeddata', () => {
+            drawFrame();
+        });
+
+        function drawFrame() {
+            // Aplicar filtros CSS al canvas
+            canvas.style.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+        
+        // Controles de imagen
+        brightnessSlider.addEventListener('input', (e) => {
+            brightness = e.target.value;
+            brightnessValue.textContent = brightness + '%';
+            drawFrame();
+        });
+        
+        contrastSlider.addEventListener('input', (e) => {
+            contrast = e.target.value;
+            contrastValue.textContent = contrast + '%';
+            drawFrame();
+        });
+        
+        saturationSlider.addEventListener('input', (e) => {
+            saturation = e.target.value;
+            saturationValue.textContent = saturation + '%';
+            drawFrame();
+        });
+        
+        function resetFilters() {
+            brightness = 100;
+            contrast = 100;
+            saturation = 100;
+            brightnessSlider.value = 100;
+            contrastSlider.value = 100;
+            saturationSlider.value = 100;
+            brightnessValue.textContent = '100%';
+            contrastValue.textContent = '100%';
+            saturationValue.textContent = '100%';
+            if (videoFile) {
+                drawFrame();
+            }
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        async function exportFrame() {
+            if (!videoFile) {
+                alert('Por favor carga un video primero');
+                return;
+            }
+
+            // Crear un canvas temporal para aplicar filtros y exportar
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            
+            // Aplicar filtros manualmente al exportar
+            tempCtx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+            tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            tempCanvas.toBlob(async (blob) => {
+                if (window.electronAPI) {
+                    // Usar diálogo de Electron
+                    const videoName = videoFile.name.replace(/\.[^/.]+$/, '');
+                    const frameTime = Math.floor(video.currentTime * 1000);
+                    const defaultName = `${videoName}_frame_${frameTime}ms.jpg`;
+                    
+                    const filePath = await window.electronAPI.saveFileDialog(defaultName);
+                    if (filePath) {
+                        const buffer = await blob.arrayBuffer();
+                        const success = await window.electronAPI.saveFile(filePath, buffer);
+                        if (!success) {
+                            alert('Error al guardar el archivo');
+                        }
+                    }
+                } else {
+                    // Fallback para navegador web
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    
+                    const videoName = videoFile.name.replace(/\.[^/.]+$/, '');
+                    const frameTime = Math.floor(video.currentTime * 1000);
+                    a.download = `${videoName}_frame_${frameTime}ms.jpg`;
+                    
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            }, 'image/jpeg', 0.95);
+        }
+
+        // Guardado rápido
+        async function quickSave() {
+            if (!videoFile) {
+                alert('Por favor carga un video primero');
+                return;
+            }
+
+            // Pedir confirmación si no hay área de recorte activa
+            if (!cropEnabled) {
+                const confirmSave = confirm('¿Guardar la imagen completa sin recortar?');
+                if (!confirmSave) {
+                    return;
+                }
+            }
+
+            // Crear canvas temporal con filtros aplicados
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            if (cropEnabled && cropArea.width > 0 && cropArea.height > 0) {
+                // Recortar imagen
+                tempCanvas.width = cropArea.width;
+                tempCanvas.height = cropArea.height;
+                tempCtx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+                tempCtx.drawImage(video, cropArea.x, cropArea.y, cropArea.width, cropArea.height, 0, 0, cropArea.width, cropArea.height);
+            } else {
+                // Imagen completa
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                tempCtx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+                tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            }
+            
+            tempCanvas.toBlob(async (blob) => {
+                if (window.electronAPI) {
+                    const buffer = await blob.arrayBuffer();
+                    
+                    // Obtener notas
+                    const notesInput = document.getElementById('notesInput');
+                    const notes = notesInput.value.trim();
+                    
+                    const result = await window.electronAPI.quickSave(buffer, notes);
+                    
+                    if (result.success) {
+                        saveCounter.textContent = `Guardado: ${result.number}.jpg en ${result.folder}`;
+                        frameCount = result.number;
+                        showToast(`Imagen ${result.number}.jpg guardada correctamente`, 'success');
+                    } else {
+                        showToast('Error al guardar: ' + result.error, 'error');
+                    }
+                }
+            }, 'image/jpeg', 0.95);
+        }
+
+        // Borrar video original
+        async function deleteOriginalVideo() {
+            if (window.electronAPI) {
+                const result = await window.electronAPI.deleteOriginalVideo();
+                if (result.success) {
+                    loadNewVideo();
+                } else if (result.error !== 'Cancelled') {
+                    showToast('Error al borrar: ' + result.error, 'error');
+                }
+            }
+        }
+
+        // Funciones de recorte
+        function toggleCrop() {
+            cropEnabled = !cropEnabled;
+            if (cropEnabled) {
+                cropOverlay.style.display = 'block';
+                toggleCropBtn.textContent = 'Desactivar recorte';
+                toggleCropBtn.classList.add('active');
+                updateCropOverlay();
+            } else {
+                cropOverlay.style.display = 'none';
+                toggleCropBtn.textContent = 'Activar recorte';
+                toggleCropBtn.classList.remove('active');
+            }
+        }
+
+        function resetCrop() {
+            if (isVideoLoaded) {
+                const centerX = (video.videoWidth - savedCropSize.width) / 2;
+                const centerY = (video.videoHeight - savedCropSize.height) / 2;
+                cropArea = { 
+                    x: Math.max(0, centerX), 
+                    y: Math.max(0, centerY), 
+                    width: Math.min(savedCropSize.width, video.videoWidth), 
+                    height: Math.min(savedCropSize.height, video.videoHeight) 
+                };
+                updateCropOverlay();
+            }
+        }
+
+        function updateCropOverlay() {
+            if (!isVideoLoaded || !cropEnabled) return;
+            
+            const canvasRect = canvas.getBoundingClientRect();
+            const videoSection = document.querySelector('.video-section');
+            const sectionRect = videoSection.getBoundingClientRect();
+            
+            // Calcular escala
+            const scaleX = canvas.offsetWidth / canvas.width;
+            const scaleY = canvas.offsetHeight / canvas.height;
+            
+            // Posicionar overlay
+            const left = (canvasRect.left - sectionRect.left) + (cropArea.x * scaleX);
+            const top = (canvasRect.top - sectionRect.top) + (cropArea.y * scaleY);
+            const width = cropArea.width * scaleX;
+            const height = cropArea.height * scaleY;
+            
+            cropOverlay.style.left = left + 'px';
+            cropOverlay.style.top = top + 'px';
+            cropOverlay.style.width = width + 'px';
+            cropOverlay.style.height = height + 'px';
+        }
+
+        // Variables para el arrastre
+        let startX, startY, startCropX, startCropY, startCropW, startCropH;
+
+        // Event listeners para el recorte mejorado
+        canvas.addEventListener('mousedown', (e) => {
+            if (!cropEnabled) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / canvas.offsetWidth;
+            const scaleY = canvas.height / canvas.offsetHeight;
+            
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            // Iniciar creación de área de recorte
+            isDragging = true;
+            startX = x;
+            startY = y;
+            
+            cropArea.x = x;
+            cropArea.y = y;
+            cropArea.width = 0;
+            cropArea.height = 0;
+            
+            updateCropOverlay();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!cropEnabled || !isDragging) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / canvas.offsetWidth;
+            const scaleY = canvas.height / canvas.offsetHeight;
+            
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            cropArea.width = Math.abs(x - startX);
+            cropArea.height = Math.abs(y - startY);
+            cropArea.x = Math.min(startX, x);
+            cropArea.y = Math.min(startY, y);
+            
+            // Limitar al canvas
+            cropArea.x = Math.max(0, cropArea.x);
+            cropArea.y = Math.max(0, cropArea.y);
+            cropArea.width = Math.min(cropArea.width, canvas.width - cropArea.x);
+            cropArea.height = Math.min(cropArea.height, canvas.height - cropArea.y);
+            
+            updateCropOverlay();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (!cropEnabled) return;
+            isDragging = false;
+            
+            // Área mínima
+            if (cropArea.width < 10 || cropArea.height < 10) {
+                cropArea.width = Math.max(50, cropArea.width);
+                cropArea.height = Math.max(50, cropArea.height);
+                updateCropOverlay();
+            }
+        });
+
+        // Event listeners para los handles del crop overlay
+        cropOverlay.addEventListener('mousedown', (e) => {
+            if (!cropEnabled) return;
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const handle = e.target.dataset.handle;
+            if (handle) {
+                isDragging = true;
+                dragHandle = handle;
+                startX = e.clientX;
+                startY = e.clientY;
+                startCropX = cropArea.x;
+                startCropY = cropArea.y;
+                startCropW = cropArea.width;
+                startCropH = cropArea.height;
+            } else {
+                // Mover toda el área
+                isDragging = true;
+                dragHandle = 'move';
+                startX = e.clientX;
+                startY = e.clientY;
+                startCropX = cropArea.x;
+                startCropY = cropArea.y;
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging || !cropEnabled) return;
+            
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            // Convertir delta de pixels a coordenadas del canvas
+            const scaleX = canvas.width / canvas.offsetWidth;
+            const scaleY = canvas.height / canvas.offsetHeight;
+            const canvasDeltaX = deltaX * scaleX;
+            const canvasDeltaY = deltaY * scaleY;
+            
+            if (dragHandle === 'move') {
+                cropArea.x = Math.max(0, Math.min(startCropX + canvasDeltaX, canvas.width - cropArea.width));
+                cropArea.y = Math.max(0, Math.min(startCropY + canvasDeltaY, canvas.height - cropArea.height));
+            } else if (dragHandle) {
+                // Redimensionar según el handle
+                let newX = startCropX;
+                let newY = startCropY;
+                let newW = startCropW;
+                let newH = startCropH;
+                
+                if (dragHandle.includes('w')) {
+                    newX = startCropX + canvasDeltaX;
+                    newW = startCropW - canvasDeltaX;
+                }
+                if (dragHandle.includes('e')) {
+                    newW = startCropW + canvasDeltaX;
+                }
+                if (dragHandle.includes('n')) {
+                    newY = startCropY + canvasDeltaY;
+                    newH = startCropH - canvasDeltaY;
+                }
+                if (dragHandle.includes('s')) {
+                    newH = startCropH + canvasDeltaY;
+                }
+                
+                // Aplicar límites
+                if (newW > 10 && newX >= 0 && (newX + newW) <= canvas.width) {
+                    cropArea.x = newX;
+                    cropArea.width = newW;
+                }
+                if (newH > 10 && newY >= 0 && (newY + newH) <= canvas.height) {
+                    cropArea.y = newY;
+                    cropArea.height = newH;
+                }
+            }
+            
+            updateCropOverlay();
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging && cropArea.width > 0 && cropArea.height > 0) {
+                // Guardar el tamaño actual del área de recorte
+                savedCropSize.width = cropArea.width;
+                savedCropSize.height = cropArea.height;
+            }
+            isDragging = false;
+            dragHandle = null;
+        });
+
+        // Función para mostrar toast
+        function showToast(message, type = 'success') {
+            // Crear o reusar toast
+            let toast = document.querySelector('.toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.className = 'toast';
+                document.body.appendChild(toast);
+            }
+            
+            // Configurar toast
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            
+            // Mostrar toast
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Ocultar toast después de 3 segundos
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Funciones de galería
+        async function openGallery(customPath = null) {
+            if (window.electronAPI) {
+                const result = await window.electronAPI.openGallery(customPath);
+                
+                if (result.success) {
+                    if (result.data.length === 0) {
+                        document.getElementById('galleryContent').innerHTML = 
+                            '<div class="no-gallery">No hay fotogramas guardados en esta carpeta.</div>';
+                    } else {
+                        await displayGallery(result.data);
+                    }
+                    
+                    // Mostrar vista de galería
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'none';
+                    document.getElementById('galleryView').classList.add('active');
+                } else {
+                    if (result.error.includes('No hay carpeta')) {
+                        // Solo mostrar toast, el usuario puede usar el botón específico
+                        showToast('No hay carpeta de galería configurada. Usa el botón "Seleccionar directorio de galería"', 'error');
+                    } else {
+                        showToast('Error al abrir galería: ' + result.error, 'error');
+                    }
+                }
+            }
+        }
+
+        async function selectGalleryDirectory() {
+            if (window.electronAPI) {
+                const result = await window.electronAPI.selectGalleryDirectory();
+                if (result.success) {
+                    showToast('Carpeta de galería configurada', 'success');
+                    // No abrir galería automáticamente, solo configurar
+                    return true;
+                } else {
+                    showToast('No se seleccionó carpeta', 'error');
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        function closeGallery() {
+            document.getElementById('galleryView').classList.remove('active');
+            if (isVideoLoaded) {
+                placeholder.style.display = 'none';
+                canvas.style.display = 'block';
+            } else {
+                placeholder.style.display = 'flex';
+                canvas.style.display = 'none';
+            }
+        }
+
+        async function displayGallery(galleryData) {
+            const content = document.getElementById('galleryContent');
+            content.innerHTML = '';
+
+            for (const folderData of galleryData) {
+                const folderDiv = document.createElement('div');
+                folderDiv.className = 'gallery-folder';
+
+                // Convertir fecha a formato largo
+                const dateParts = folderData.folder.split('-');
+                const dateObj = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                const dateString = dateObj.toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                // Crear sección de información (fecha + notas)
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'folder-info';
+                
+                const dateTitle = document.createElement('div');
+                dateTitle.className = 'folder-date';
+                // Formato más corto: "15 de agosto de 2025"
+                const shortDateString = dateObj.toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                dateTitle.textContent = shortDateString;
+                infoDiv.appendChild(dateTitle);
+                
+                // Añadir notas si existen
+                if (folderData.notes && folderData.notes.trim()) {
+                    const notesDiv = document.createElement('div');
+                    notesDiv.className = 'folder-notes';
+                    notesDiv.textContent = folderData.notes;
+                    infoDiv.appendChild(notesDiv);
+                }
+                
+                folderDiv.appendChild(infoDiv);
+
+                const imagesContainer = document.createElement('div');
+                imagesContainer.className = 'folder-images';
+
+                // Cargar y mostrar imágenes
+                for (const imagePath of folderData.images) {
+                    const img = document.createElement('img');
+                    img.className = 'gallery-image';
+                    img.alt = `Fotograma ${folderData.images.indexOf(imagePath) + 1}`;
+                    
+                    // Cargar imagen como base64
+                    const imageResult = await window.electronAPI.readImageAsBase64(imagePath);
+                    if (imageResult.success) {
+                        img.src = imageResult.data;
+                    } else {
+                        img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiIgcnk9IjIiLz48Y2lyY2xlIGN4PSI4LjUiIGN5PSI4LjUiIHI9IjEuNSIvPjxwYXRoIGQ9Im0yMSAxNS02LTZMNSAyMSIvPjwvc3ZnPg==';
+                    }
+                    
+                    imagesContainer.appendChild(img);
+                }
+
+                folderDiv.appendChild(imagesContainer);
+                content.appendChild(folderDiv);
+            }
+        }
+
+        // Actualizar overlay cuando se redimensiona
+        window.addEventListener('resize', () => {
+            if (cropEnabled) {
+                setTimeout(updateCropOverlay, 100);
+            }
+        });
+    </script>
+</body>
+</html>

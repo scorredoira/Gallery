@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor de Fotogramas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .main-container {
+            display: flex;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+        .video-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .controls-section {
+            width: 350px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+        .upload-area:hover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+        .upload-area.dragover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+        .upload-area.has-video {
+            display: none;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .upload-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        .upload-btn:hover {
+            background: #45a049;
+        }
+        .video-controls {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .video-controls.active {
+            display: flex;
+        }
+        .slider-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e0e0e0;
+            border-radius: 4px;
+            outline: none;
+            position: relative;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+        canvas {
+            max-height: calc(100vh - 40px);
+            max-width: 100%;
+            height: auto;
+            width: auto;
+            border-radius: 8px;
+            display: block;
+        }
+        .export-btn {
+            background: #2196F3;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: none;
+            width: 100%;
+        }
+        .export-btn:hover {
+            background: #1976D2;
+        }
+        .export-btn.active {
+            display: block;
+        }
+        .info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: auto;
+            display: none;
+            font-size: 13px;
+        }
+        .info.active {
+            display: block;
+        }
+        .info strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        .info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        video {
+            display: none;
+        }
+        .new-video-btn {
+            background: #f0f0f0;
+            color: #333;
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .new-video-btn:hover {
+            background: #e8e8e8;
+            border-color: #ccc;
+        }
+        .new-video-btn.active {
+            display: block;
+        }
+        
+        /* Nuevos controles de imagen */
+        .image-controls {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            margin-bottom: 20px;
+        }
+        .image-controls.active {
+            display: block;
+        }
+        .image-controls h3 {
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #555;
+        }
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+        .control-row label {
+            flex: 0 0 80px;
+            font-size: 13px;
+            color: #666;
+        }
+        .control-row input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e0e0e0;
+            border-radius: 3px;
+            outline: none;
+        }
+        .control-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #2196F3;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .control-row input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #2196F3;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        .control-row span {
+            flex: 0 0 40px;
+            text-align: right;
+            font-size: 12px;
+            color: #888;
+        }
+        .reset-btn {
+            background: #f0f0f0;
+            color: #666;
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .reset-btn:hover {
+            background: #e8e8e8;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="video-section">
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div class="controls-section">
+            <h1>🎬 Extractor de Fotogramas</h1>
+            
+            <button class="new-video-btn" id="newVideoBtn" onclick="loadNewVideo()">
+                📁 Cargar otro video
+            </button>
+            
+            <div class="upload-area" id="uploadArea">
+                <p>📁 Arrastra un archivo .mov aquí</p>
+                <input type="file" id="fileInput" accept="video/*,.mov,.mp4,.avi,.webm">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Seleccionar Video
+                </button>
+            </div>
+
+            <div class="video-controls" id="videoControls">
+                <div class="slider-container">
+                    <input type="range" min="0" max="100" value="0" class="slider" id="timeSlider" step="0.01">
+                    <div class="time-display">
+                        <span id="currentTime">0:00</span>
+                        <span id="totalTime">0:00</span>
+                    </div>
+                </div>
+                
+                <div class="image-controls" id="imageControls">
+                    <h3>🎨 Ajustes de imagen</h3>
+                    <div class="control-row">
+                        <label>Brillo</label>
+                        <input type="range" min="50" max="150" value="100" id="brightnessSlider">
+                        <span id="brightnessValue">100%</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Contraste</label>
+                        <input type="range" min="50" max="150" value="100" id="contrastSlider">
+                        <span id="contrastValue">100%</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Saturación</label>
+                        <input type="range" min="0" max="200" value="100" id="saturationSlider">
+                        <span id="saturationValue">100%</span>
+                    </div>
+                    <button class="reset-btn" onclick="resetFilters()">Restablecer</button>
+                </div>
+                
+                <button class="export-btn" id="exportBtn" onclick="exportFrame()">
+                    💾 Guardar Fotograma como JPG
+                </button>
+            </div>
+
+            <div class="info" id="info">
+                <strong>Información del video:</strong>
+                <div id="videoInfo"></div>
+            </div>
+        </div>
+    </div>
+
+    <video id="video"></video>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const timeSlider = document.getElementById('timeSlider');
+        const currentTimeSpan = document.getElementById('currentTime');
+        const totalTimeSpan = document.getElementById('totalTime');
+        const videoControls = document.getElementById('videoControls');
+        const exportBtn = document.getElementById('exportBtn');
+        const info = document.getElementById('info');
+        const videoInfo = document.getElementById('videoInfo');
+        const newVideoBtn = document.getElementById('newVideoBtn');
+        const imageControls = document.getElementById('imageControls');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const saturationSlider = document.getElementById('saturationSlider');
+        const brightnessValue = document.getElementById('brightnessValue');
+        const contrastValue = document.getElementById('contrastValue');
+        const saturationValue = document.getElementById('saturationValue');
+
+        let videoFile = null;
+        let brightness = 100;
+        let contrast = 100;
+        let saturation = 100;
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // File input
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('video/')) {
+                alert('Por favor selecciona un archivo de video');
+                return;
+            }
+
+            videoFile = file;
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            
+            video.addEventListener('loadedmetadata', () => {
+                // Ajustar canvas manteniendo aspecto
+                const videoAspect = video.videoWidth / video.videoHeight;
+                const maxHeight = window.innerHeight - 40;
+                const maxWidth = document.querySelector('.video-section').offsetWidth - 40;
+                
+                let canvasHeight = maxHeight;
+                let canvasWidth = canvasHeight * videoAspect;
+                
+                if (canvasWidth > maxWidth) {
+                    canvasWidth = maxWidth;
+                    canvasHeight = canvasWidth / videoAspect;
+                }
+                
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.style.width = canvasWidth + 'px';
+                canvas.style.height = canvasHeight + 'px';
+                
+                // Mostrar información del video
+                videoInfo.innerHTML = `
+                    <p>📹 ${file.name}</p>
+                    <p>📐 ${video.videoWidth} x ${video.videoHeight}</p>
+                    <p>⏱️ ${formatTime(video.duration)}</p>
+                    <p>📦 ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                `;
+                info.classList.add('active');
+                
+                // Configurar slider
+                timeSlider.max = video.duration;
+                totalTimeSpan.textContent = formatTime(video.duration);
+                
+                // Mostrar/ocultar elementos
+                uploadArea.classList.add('has-video');
+                videoControls.classList.add('active');
+                exportBtn.classList.add('active');
+                newVideoBtn.classList.add('active');
+                imageControls.classList.add('active');
+                
+                // Dibujar primer frame
+                drawFrame();
+            });
+        }
+        
+        function loadNewVideo() {
+            // Reset UI
+            uploadArea.classList.remove('has-video');
+            videoControls.classList.remove('active');
+            exportBtn.classList.remove('active');
+            newVideoBtn.classList.remove('active');
+            info.classList.remove('active');
+            imageControls.classList.remove('active');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Reset video
+            video.src = '';
+            videoFile = null;
+            fileInput.value = '';
+            
+            // Reset filters
+            resetFilters();
+        }
+
+        // Slider control
+        timeSlider.addEventListener('input', (e) => {
+            video.currentTime = e.target.value;
+            currentTimeSpan.textContent = formatTime(e.target.value);
+        });
+
+        // Dibujar frame cuando el video busca
+        video.addEventListener('seeked', () => {
+            drawFrame();
+        });
+
+        function drawFrame() {
+            // Aplicar filtros CSS al canvas
+            canvas.style.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+        
+        // Controles de imagen
+        brightnessSlider.addEventListener('input', (e) => {
+            brightness = e.target.value;
+            brightnessValue.textContent = brightness + '%';
+            drawFrame();
+        });
+        
+        contrastSlider.addEventListener('input', (e) => {
+            contrast = e.target.value;
+            contrastValue.textContent = contrast + '%';
+            drawFrame();
+        });
+        
+        saturationSlider.addEventListener('input', (e) => {
+            saturation = e.target.value;
+            saturationValue.textContent = saturation + '%';
+            drawFrame();
+        });
+        
+        function resetFilters() {
+            brightness = 100;
+            contrast = 100;
+            saturation = 100;
+            brightnessSlider.value = 100;
+            contrastSlider.value = 100;
+            saturationSlider.value = 100;
+            brightnessValue.textContent = '100%';
+            contrastValue.textContent = '100%';
+            saturationValue.textContent = '100%';
+            if (videoFile) {
+                drawFrame();
+            }
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function exportFrame() {
+            if (!videoFile) {
+                alert('Por favor carga un video primero');
+                return;
+            }
+
+            // Crear un canvas temporal para aplicar filtros y exportar
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            
+            // Aplicar filtros manualmente al exportar
+            tempCtx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+            tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            tempCanvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Generar nombre del archivo
+                const videoName = videoFile.name.replace(/\.[^/.]+$/, '');
+                const frameTime = Math.floor(video.currentTime * 1000);
+                a.download = `${videoName}_frame_${frameTime}ms.jpg`;
+                
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/jpeg', 0.95);
+        }
+    </script>
+</body>
+</html>

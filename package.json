@@ -1,0 +1,63 @@
+{
+  "name": "gallery",
+  "version": "1.0.0",
+  "description": "Video frame extraction and gallery tool",
+  "main": "main.js",
+  "homepage": "./",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-mac": "electron-builder --mac",
+    "build-mac-arm": "electron-builder --mac --arm64",
+    "build-win": "electron-builder --win",
+    "build-linux": "electron-builder --linux",
+    "dist": "electron-builder --publish=never"
+  },
+  "build": {
+    "appId": "com.gallery.app",
+    "productName": "Gallery",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "logo.png",
+      "logo-512.png",
+      "node_modules/**/*"
+    ],
+    "icon": "logo-512.png",
+    "mac": {
+      "category": "public.app-category.video",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  },
+  "keywords": [
+    "video",
+    "frames",
+    "extraction",
+    "electron"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^37.3.0",
+    "electron-builder": "^24.13.3"
+  }
+}
