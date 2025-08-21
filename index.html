@@ -715,6 +715,28 @@
         let isDragging = false;
         let dragHandle = null;
 
+        // Cargar área de recorte guardada al iniciar
+        async function loadSavedCropArea() {
+            if (window.electronAPI) {
+                const result = await window.electronAPI.loadCropArea();
+                if (result.success && result.data) {
+                    savedCropSize = result.data;
+                    console.log('Loaded saved crop area:', savedCropSize);
+                }
+            }
+        }
+
+        // Guardar área de recorte
+        async function saveCropArea() {
+            if (window.electronAPI && savedCropSize.width > 0 && savedCropSize.height > 0) {
+                await window.electronAPI.saveCropArea(savedCropSize);
+                console.log('Saved crop area:', savedCropSize);
+            }
+        }
+
+        // Cargar configuración al iniciar la aplicación
+        loadSavedCropArea();
+
         // Abrir diálogo de archivo con Electron
         async function selectFile() {
             if (window.electronAPI) {
@@ -818,6 +840,17 @@
                     width: Math.min(savedCropSize.width, video.videoWidth), 
                     height: Math.min(savedCropSize.height, video.videoHeight) 
                 };
+                
+                // Si hay un área de recorte guardada, activar recorte automáticamente
+                if (savedCropSize.width > 0 && savedCropSize.height > 0) {
+                    cropEnabled = true;
+                    toggleCropBtn.textContent = 'Desactivar recorte';
+                    toggleCropBtn.classList.add('active');
+                    setTimeout(() => {
+                        cropOverlay.style.display = 'block';
+                        updateCropOverlay();
+                    }, 100);
+                }
                 
                 // Mostrar primer frame inmediatamente
                 video.currentTime = 0.01; // Pequeño offset para forzar el seeked event
@@ -1190,6 +1223,13 @@
                 cropArea.height = Math.max(50, cropArea.height);
                 updateCropOverlay();
             }
+            
+            // Guardar el tamaño del área de recorte
+            if (cropArea.width > 0 && cropArea.height > 0) {
+                savedCropSize.width = cropArea.width;
+                savedCropSize.height = cropArea.height;
+                saveCropArea();
+            }
         });
 
         // Event listeners para los handles del crop overlay
@@ -1275,6 +1315,8 @@
                 // Guardar el tamaño actual del área de recorte
                 savedCropSize.width = cropArea.width;
                 savedCropSize.height = cropArea.height;
+                // Guardar persistentemente
+                saveCropArea();
             }
             isDragging = false;
             dragHandle = null;

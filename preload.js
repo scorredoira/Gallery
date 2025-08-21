@@ -9,5 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openGallery: (customPath) => ipcRenderer.invoke('open-gallery', customPath),
     selectGalleryDirectory: () => ipcRenderer.invoke('select-gallery-directory'),
     readImageAsBase64: (imagePath) => ipcRenderer.invoke('read-image-as-base64', imagePath),
+    saveCropArea: (cropArea) => ipcRenderer.invoke('save-crop-area', cropArea),
+    loadCropArea: () => ipcRenderer.invoke('load-crop-area'),
     onWindowResized: (callback) => ipcRenderer.on('window-resized', callback)
 });

@@ -357,3 +357,30 @@ ipcMain.handle('read-image-as-base64', async (event, imagePath) => {
         return { success: false, error: error.message };
     }
 });
+
+// IPC handler para guardar área de recorte
+ipcMain.handle('save-crop-area', async (event, cropArea) => {
+    const cropConfigPath = path.join(app.getPath('userData'), 'crop-config.json');
+    try {
+        fs.writeFileSync(cropConfigPath, JSON.stringify(cropArea, null, 2));
+        return { success: true };
+    } catch (error) {
+        console.error('Error saving crop area:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// IPC handler para cargar área de recorte
+ipcMain.handle('load-crop-area', async () => {
+    const cropConfigPath = path.join(app.getPath('userData'), 'crop-config.json');
+    try {
+        if (fs.existsSync(cropConfigPath)) {
+            const cropArea = JSON.parse(fs.readFileSync(cropConfigPath, 'utf8'));
+            return { success: true, data: cropArea };
+        }
+        return { success: false, error: 'No crop area saved' };
+    } catch (error) {
+        console.error('Error loading crop area:', error);
+        return { success: false, error: error.message };
+    }
+});
